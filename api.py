@@ -5,6 +5,7 @@ import pandas as pd
 import joblib
 import os
 import fastf1
+import threading
 
 from ingest_fastf1 import F1DataIngestor
 from process_data import get_fastest_lap_telemetry, save_to_feature_store
@@ -103,6 +104,24 @@ def predict_lap_pace(request: PredictionRequest):
         "predicted_lap_time_seconds": round(prediction, 3)
     }
 
+downloading = set()
+download_lock = threading.Lock()
+
+def background_download(year, circuit, driver):
+    file_name = f"{circuit}_{year}_{driver}_fastest"
+    try:
+        laps_df, _ = ingestor.get_race_data(year, circuit, 'R')
+        if laps_df is None:
+            return
+        telemetry = get_fastest_lap_telemetry(laps_df, driver)
+        if telemetry is not None:
+            save_to_feature_store(telemetry, 'telemetry', file_name)
+    except Exception as e:
+        print(f"Background download failed for {file_name}: {e}")
+    finally:
+        with download_lock:
+            downloading.discard(file_name)
+
 @app.get("/telemetry/{year}/{circuit}/{driver}")
 def get_dynamic_telemetry(year: int, circuit: str, driver: str):
     driver = driver.upper()
@@ -116,20 +135,13 @@ def get_dynamic_telemetry(year: int, circuit: str, driver: str):
         df = pd.read_parquet(file_path)
         return df.to_dict(orient="records")
 
-    print(f"Server: Cache Miss for {file_name}. Triggering ETL Pipeline...")
+    with download_lock:
+        if file_name not in downloading:
+            downloading.add(file_name)
+            thread = threading.Thread(target=background_download, args=(year, circuit, driver), daemon=True)
+            thread.start()
 
-    try:
-        laps_df, weather_df = ingestor.get_race_data(year, circuit, 'R')
-        if laps_df is None:
-            raise HTTPException(status_code=404, detail="Race data not found on F1 servers.")
-
-        telemetry = get_fastest_lap_telemetry(laps_df, driver)
-        if telemetry is None:
-            raise HTTPException(status_code=404, detail=f"No telemetry found for {driver}.")
-
-        save_to_feature_store(telemetry, 'telemetry', file_name)
-
-        return telemetry.to_dict(orient="records")
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(
+        status_code=503,
+        detail="Data is being downloaded. This takes ~20 seconds. Please try again in a moment."
+    )
