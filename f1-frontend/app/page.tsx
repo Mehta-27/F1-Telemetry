@@ -79,6 +79,7 @@ export default function F1Dashboard() {
   const [activeTab, setActiveTab] = useState("predict");
   const [year, setYear] = useState("2023");
   const [circuits, setCircuits] = useState<string[]>([]);
+  const [circuitsLoading, setCircuitsLoading] = useState(true);
   const [circuit, setCircuit] = useState("");
   const [driver, setDriver] = useState("VER");
 
@@ -97,12 +98,15 @@ export default function F1Dashboard() {
   const [circuitLoading, setCircuitLoading] = useState(false);
   const [circuitError, setCircuitError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchCircuits = (attempt = 0) => {
+    setCircuitsLoading(true);
     fetch(`${API_BASE}/schedule/${year}`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error("Not ready"); return r.json(); })
       .then(d => { if (d.circuits?.length) { setCircuits(d.circuits); if (!circuit || !d.circuits.includes(circuit)) setCircuit(d.circuits[0]); } })
-      .catch(() => {});
-  }, [year]);
+      .catch(() => { if (attempt < 5) setTimeout(() => fetchCircuits(attempt + 1), attempt * 4000); })
+      .finally(() => setCircuitsLoading(false));
+  };
+  useEffect(() => { fetchCircuits(); }, [year]);
 
   const runPrediction = async () => {
     setPredictError(null); setPredictedTime(null); setPredicting(true);
@@ -170,12 +174,12 @@ export default function F1Dashboard() {
                   {[2024,2023,2022,2021,2020,2019,2018].map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </Field>
-              <Field label="Circuit">
-                <select value={circuit} onChange={e => setCircuit(e.target.value)}
-                  className="w-full bg-black/40 border border-[var(--border-glass)] rounded px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] transition-colors">
-                  {circuits.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </Field>
+                              <Field label="Circuit">
+                                <select value={circuit} onChange={e => setCircuit(e.target.value)}
+                                  className="w-full bg-black/40 border border-[var(--border-glass)] rounded px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] transition-colors">
+                                  {circuitsLoading ? <option>Waking backend...</option> : circuits.length ? circuits.map(c => <option key={c} value={c}>{c}</option>) : <option>No circuits</option>}
+                                </select>
+                              </Field>
               <Field label="Driver">
                 <select value={driver} onChange={e => setDriver(e.target.value)}
                   className="w-full bg-black/40 border border-[var(--border-glass)] rounded px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] transition-colors">
