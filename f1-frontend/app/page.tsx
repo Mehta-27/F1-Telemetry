@@ -469,7 +469,7 @@ export default function F1Dashboard() {
                               <ZAxis range={[0, 0]} />
                               <Tooltip
                                 contentStyle={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", fontSize: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}
-                                formatter={(value: number, name: string) => [name === "Speed" ? `${fmt(value, 0)} km/h` : fmt(value, 0), name]}
+                                formatter={(value, name) => [name === "Speed" ? `${fmt(value as number, 0)} km/h` : fmt(value as number, 0), name] as [string, string]}
                                 labelFormatter={() => ""}
                               />
                               <Scatter data={trackData} line={{ stroke: "rgba(255,255,255,0.05)", strokeWidth: 1 }} lineType="joint" shape="circle" fill="var(--f1-red)" legendType="none">
