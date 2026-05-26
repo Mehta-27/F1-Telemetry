@@ -1,11 +1,7 @@
-fastapi==0.136.3
-uvicorn==0.48.0
+streamlit==1.57.0
 fastf1==3.8.3
 pandas==2.3.3
 scikit-learn==1.8.0
 joblib==1.5.3
 numpy==2.4.6
-streamlit==1.57.0
 altair==6.1.0
-pydantic==2.13.4
-requests==2.34.2

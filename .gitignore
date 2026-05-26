@@ -40,4 +40,7 @@ Thumbs.db
 # ─── Jupyter ────────────────────────────────────────────
 .ipynb_checkpoints/
 
-# ─── Frontend (managed in f1-frontend/.gitignore) ──────
+# ─── Frontend build artifacts ─────────────────────────
+node_modules/
+.next/
+f1-frontend/
