@@ -123,45 +123,35 @@ export default function F1Dashboard() {
     finally { setPredicting(false); }
   };
 
-  const fetchTelemetry = async (attempt = 0) => {
-    if (attempt === 0) { setLoading(true); setTelemetryError(null); setTelemetry([]); }
+  const fetchTelemetry = async () => {
+    setLoading(true); setTelemetryError(null); setTelemetry([]);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
     try {
-      const res = await fetch(`${API_BASE}/telemetry/${year}/${circuit}/${driver}`);
+      const res = await fetch(`${API_BASE}/telemetry/${year}/${circuit}/${driver}`, { signal: controller.signal });
       const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 503 && attempt < 8) {
-          setTelemetryError("Downloading data from F1 servers... retrying");
-          setTimeout(() => fetchTelemetry(attempt + 1), 5000);
-          return;
-        }
-        setTelemetryError(data.detail || "Failed to fetch telemetry");
-        setLoading(false);
-        return;
-      }
+      if (!res.ok) { setTelemetryError(data.detail || "Failed to fetch telemetry"); setLoading(false); return; }
       setTelemetry(data);
-    } catch { setTelemetryError("API offline. Start the backend."); }
+    } catch { setTelemetryError("API offline. First fetch takes ~20s to download from F1 servers. Try again."); }
+    clearTimeout(timeout);
     setLoading(false);
   };
 
-  const fetchCircuitAnalytics = async (attempt = 0) => {
-    if (attempt === 0) { setCircuitLoading(true); setCircuitError(null); setCircuitInfo(null); setTrackData([]); }
+  const fetchCircuitAnalytics = async () => {
+    setCircuitLoading(true); setCircuitError(null); setCircuitInfo(null); setTrackData([]);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
     try {
       const [infoRes, telemRes] = await Promise.all([
-        fetch(`${API_BASE}/circuit_info/${year}/${circuit}`),
-        fetch(`${API_BASE}/telemetry/${year}/${circuit}/${driver}`),
+        fetch(`${API_BASE}/circuit_info/${year}/${circuit}`, { signal: controller.signal }),
+        fetch(`${API_BASE}/telemetry/${year}/${circuit}/${driver}`, { signal: controller.signal }),
       ]);
       if (infoRes.ok) setCircuitInfo(await infoRes.json());
       else setCircuitError("Circuit info unavailable");
       if (telemRes.ok) setTrackData(await telemRes.json());
-      else if (!circuitError) {
-        if (telemRes.status === 503 && attempt < 8) {
-          setCircuitError("Downloading data from F1 servers... retrying");
-          setTimeout(() => fetchCircuitAnalytics(attempt + 1), 5000);
-          return;
-        }
-        setCircuitError(prev => prev ? prev : "Telemetry unavailable");
-      }
-    } catch { setCircuitError("API offline. Start the backend."); }
+      else if (!circuitError) setCircuitError(prev => prev ? prev : "Telemetry unavailable");
+    } catch { setCircuitError("API offline. First fetch takes ~20s. Try again."); }
+    clearTimeout(timeout);
     setCircuitLoading(false);
   };
 
