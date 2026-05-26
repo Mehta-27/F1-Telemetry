@@ -32,7 +32,7 @@ type CircuitInfo = {
 
 const COMPOUNDS = ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"] as const;
 const GRID = ["VER","HAM","ALO","LEC","SAI","NOR","PIA","RUS","PER","OCO","BOT","MAG","ALB","TSU","STR","ZHO","HUL","SAR"] as const;
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://f1-telemetry-cvqz.onrender.com";
 
 function speedColor(speed: number): string {
   if (speed < 100) return "#0055FF";
