@@ -1,0 +1,43 @@
+# ─── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ─── Virtual Environment ────────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── F1 Data Cache (auto-generated) ─────────────────────
+f1_cache/*
+!f1_cache/.gitkeep
+
+# ─── IDE / Editor ──────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── OS ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.DS_Store?
+
+# ─── Environment ────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Logs ───────────────────────────────────────────────
+*.log
+
+# ─── Jupyter ────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ─── Frontend (managed in f1-frontend/.gitignore) ──────
