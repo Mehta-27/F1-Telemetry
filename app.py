@@ -1,12 +1,15 @@
-import streamlit as st
-import pandas as pd
-import altair as alt
-import joblib
+import logging
 import os
+
+import altair as alt
 import fastf1
-import time
+import joblib
+import pandas as pd
+import streamlit as st
 from ingest_fastf1 import F1DataIngestor
 from process_data import get_fastest_lap_telemetry, save_to_feature_store
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="F1 INTELLIGENCE", layout="wide", page_icon=None)
 

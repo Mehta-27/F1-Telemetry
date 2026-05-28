@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  f1-intelligence:
+    build: .
+    container_name: f1-intelligence-hub
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./f1_cache:/app/f1_cache
+      - ./feature_store:/app/feature_store
+      - ./models:/app/models
+    environment:
+      - STREAMLIT_SERVER_MAX_UPLOAD_SIZE=50
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; exit(0 if urllib.request.urlopen('http://localhost:8501/_stcore/health').status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

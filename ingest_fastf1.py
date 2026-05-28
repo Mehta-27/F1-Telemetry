@@ -1,53 +1,46 @@
-import fastf1
+import logging
 import os
+from typing import Optional
+
+import fastf1
 import pandas as pd
 
-class F1DataIngestor:
-    def __init__(self, cache_dir='./f1_cache'):
-        """
-        Initializes the ingestor and strictly enforces caching.
-        """
-        self.cache_dir = cache_dir
-        
-        # 1. The Golden Rule: Enable Caching
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
-        fastf1.Cache.enable_cache(self.cache_dir)
-        print(f"System: fastf1 cache enabled at {self.cache_dir}")
+logger = logging.getLogger(__name__)
 
-    def get_race_data(self, year: int, circuit: str, session_type: str = 'R'):
-        """
-        Downloads and loads all telemetry, laps, and weather for a specific session.
-        session_type: 'FP1', 'FP2', 'FP3', 'Q' (Qualifying), 'R' (Race)
-        """
-        print(f"System: Fetching data for {year} {circuit} ({session_type})...")
-        
-        # 2. Fetch the Session
+
+class F1DataIngestor:
+    def __init__(self, cache_dir: str = "./f1_cache") -> None:
+        self.cache_dir = cache_dir
+        os.makedirs(self.cache_dir, exist_ok=True)
+        fastf1.Cache.enable_cache(self.cache_dir)
+        logger.info("fastf1 cache enabled at %s", self.cache_dir)
+
+    def get_race_data(
+        self, year: int, circuit: str, session_type: str = "R"
+    ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+        logger.info("Fetching data for %d %s (%s)...", year, circuit, session_type)
         try:
             session = fastf1.get_session(year, circuit, session_type)
-            
-            # 3. Load the data (This takes time on the first run, but is instant afterward)
             session.load(telemetry=True, weather=True, messages=False)
-            
-            # Extract the core DataFrames
             laps_df = session.laps
             weather_df = session.weather_data
-            
-            print(f"Success: Loaded {len(laps_df)} laps.")
+            logger.info("Loaded %d laps.", len(laps_df))
             return laps_df, weather_df
-            
         except Exception as e:
-            print(f"Error fetching data: {e}")
+            logger.error("Error fetching data: %s", e)
             return None, None
 
 # Run the ingestion
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     ingestor = F1DataIngestor()
-    
-    # Let's pull the 2023 Monaco Grand Prix Race
-    monaco_laps, monaco_weather = ingestor.get_race_data(2023, 'Monaco', 'R')
-    
-    # Preview the raw data
+    monaco_laps, monaco_weather = ingestor.get_race_data(2023, "Monaco", "R")
     if monaco_laps is not None:
-        print("\nRaw Data Preview (First 3 laps):")
-        print(monaco_laps[['Driver', 'LapTime', 'Compound', 'TyreLife']].head(3))
+        logger.info(
+            "Raw preview:\n%s",
+            monaco_laps[["Driver", "LapTime", "Compound", "TyreLife"]].head(3),
+        )

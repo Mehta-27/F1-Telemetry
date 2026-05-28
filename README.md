@@ -1,158 +1,92 @@
-# F1 Intelligence Hub
+<div align="center">
+  <img src="https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/Streamlit-1.57-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit 1.57">
+  <img src="https://img.shields.io/badge/scikit--learn-1.8-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="scikit-learn 1.8">
+  <img src="https://img.shields.io/badge/fastf1-3.8-FF1801?style=for-the-badge" alt="fastf1 3.8">
+  <br>
+  <img src="https://img.shields.io/github/actions/workflow/status/Mehta-27/F1-Telemetry/ci.yml?style=for-the-badge&label=CI&logo=github" alt="CI">
+  <img src="https://img.shields.io/github/license/Mehta-27/F1-Telemetry?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/github/stars/Mehta-27/F1-Telemetry?style=for-the-badge&logo=github" alt="Stars">
+  <img src="https://img.shields.io/badge/code%20style-ruff-000000?style=for-the-badge" alt="Ruff">
+</div>
 
-**A full-stack Formula 1 data analytics and machine learning platform** that ingests real F1 telemetry via `fastf1`, trains a Random Forest model for lap time prediction, and serves an interactive race-engineering dashboard.
+<h1 align="center">
+  F1 Intelligence Hub
+</h1>
 
-## Architecture
+<p align="center">
+  <b>Formula 1 data analytics &amp; ML platform</b> — Ingest real F1 telemetry via <code>fastf1</code>, train a Random Forest model for lap time prediction, and explore data through a cinematic Streamlit dashboard.
+</p>
 
-```
-                         +---------------------------+
-                         |   Next.js Frontend        |
-                         |   (port 3000)             |
-                         |   React 19 / Recharts     |
-                         +-----------+---------------+
-                                     |
-                                   HTTP (REST)
-                                     |
-                         +-----------v---------------+
-                         |   FastAPI Backend          |
-                         |   (port 8000)             |
-                         |   CORS for localhost:3000  |
-                         +-----------+---------------+
-                                     |
-                    +----------------+----------------+
-                    |                                 |
-          +---------v--------+           +------------v-----------+
-          | Feature Store    |           |  fastf1 API           |
-          | (Parquet files)  |           |  (F1 live data)       |
-          +------------------+           +------------------------+
-                    |
-          +---------v--------+
-          | ML Model         |
-          | tyre_deg_model   |
-          | (Random Forest)  |
-          +------------------+
-```
+<p align="center">
+  <a href="#-features">Features</a> ·
+  <a href="#-quick-start">Quick Start</a> ·
+  <a href="#-project-structure">Structure</a> ·
+  <a href="#-tech-stack">Tech Stack</a> ·
+  <a href="#-contributing">Contributing</a>
+</p>
+
+---
 
 ## Features
 
 | Feature | Description |
 |---|---|
-| **Pace Prediction** | ML-driven lap time forecast based on tyre compound and degradation |
+| **Pace Prediction** | ML-driven lap time forecast based on tyre compound & degradation |
 | **Grid Telemetry** | High-resolution 10 Hz telemetry (speed, throttle, brake) per driver |
 | **Circuit Analytics** | GPS track layout with speed heatmap, event info, and lap statistics |
 | **Data Lake** | Parquet-based feature store with lazy-loading cache for instant replay |
-| **Streamlit Dashboard** | Alternative Python-based UI for data exploration |
+| **Docker Support** | Single-command deployment with `docker compose up` |
+| **CI/CD** | Automated linting, type checking, testing via GitHub Actions |
 
-## Prerequisites
+## Quick Start
 
-- **Python 3.11+**
-- **Node.js 20+**
-- **npm** or **yarn**
-
-## Installation
-
-### Backend
+### Option 1: Docker (recommended)
 
 ```bash
-# Create a virtual environment
+docker compose up
+```
+
+Open [http://localhost:8501](http://localhost:8501).
+
+### Option 2: Native
+
+```bash
+# 1. Create virtual environment
 python -m venv .venv
+source .venv/bin/activate   # or .venv\Scripts\activate on Windows
 
-# Activate it
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
+
+# 3. Launch dashboard
+streamlit run app.py
 ```
 
-### Frontend
-
-```bash
-cd f1-frontend
-npm install
-```
-
-## Usage
-
-### 1. Start the API server
-
-```bash
-python api.py
-# or
-uvicorn api:app --reload --port 8000
-```
-
-### 2. (Optional) Train the ML model
+### Train the ML Model
 
 ```bash
 python train_model.py
-```
-
-### 3. Start the frontend
-
-```bash
-cd f1-frontend
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### 4. (Alternative) Streamlit dashboard
-
-```bash
-streamlit run app.py
 ```
 
 ## Data Pipeline
 
-```bash
-# Full ETL pipeline: ingest Monaco 2023, extract telemetry, save to feature store
-python main.py
-
-# Train degradation model on cleaned lap data
-python train_model.py
+```
+fastf1 API  ──▶  ingest_fastf1.py  ──▶  process_data.py  ──▶  feature_store/  ──▶  train_model.py
+                                                                                      │
+                                                                                      ▼
+                                                                              models/tyre_deg_model.pkl
 ```
 
-Data is cached in `./f1_cache/` after first download. The feature store lives in `./feature_store/` as Parquet files for zero-latency replay.
-
-## API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | Health check |
-| `GET` | `/schedule/{year}` | All circuit locations for a season |
-| `GET` | `/circuit_info/{year}/{circuit}` | Official event metadata |
-| `POST` | `/predict_pace` | Predict lap time (body: `{tyre_life, compound}`) |
-| `GET` | `/telemetry/{year}/{circuit}/{driver}` | Driver's fastest lap telemetry |
-
-### Predict Pace Example
-
-```bash
-curl -X POST http://localhost:8000/predict_pace \
-  -H "Content-Type: application/json" \
-  -d '{"tyre_life": 15, "compound": "SOFT"}'
-```
-
-Response:
-```json
-{
-  "requested_compound": "SOFT",
-  "tyre_life": 15,
-  "predicted_lap_time_seconds": 75.234
-}
-```
+Data is cached in `./f1_cache/` after first download. Feature store lives in `./feature_store/` as Parquet files for zero-latency replay.
 
 ## Project Structure
 
 ```
-├── api.py                 # FastAPI REST API
-├── app.py                 # Streamlit dashboard
-├── main.py                # Data pipeline orchestrator
+├── app.py                 # Streamlit dashboard (cinematic F1 UI)
 ├── ingest_fastf1.py       # F1 data ingestion (fastf1 wrapper)
 ├── process_data.py        # ETL / data cleaning
-├── train_model.py         # ML model training
+├── train_model.py         # ML model training (Random Forest)
 ├── requirements.txt       # Python dependencies
 │
 ├── models/
@@ -164,14 +98,25 @@ Response:
 │
 ├── f1_cache/              # fastf1 HTTP cache (auto-generated)
 │
-├── f1-frontend/           # Next.js frontend application
-│   ├── app/
-│   │   ├── page.tsx       # Main dashboard (3 tabs)
-│   │   ├── layout.tsx     # Root layout with Geist font
-│   │   └── globals.css    # F1 design system
-│   ├── package.json
-│   └── README.md
+├── tests/                 # Pytest test suite
+│   ├── conftest.py
+│   ├── test_ingest.py
+│   ├── test_process.py
+│   └── test_train.py
 │
+├── .github/
+│   ├── workflows/ci.yml   # GitHub Actions CI
+│   ├── ISSUE_TEMPLATE/    # Bug report & feature request templates
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── Dockerfile             # Production container image
+├── docker-compose.yml     # Orchestrated deployment
+├── pyproject.toml         # Project metadata & tool config
+├── Makefile               # Common dev commands
+├── .pre-commit-config.yaml
+├── .editorconfig
+├── SECURITY.md
+├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 └── README.md
@@ -179,25 +124,20 @@ Response:
 
 ## Tech Stack
 
-### Backend
-- **FastAPI** — REST API framework
-- **fastf1** — Official F1 data API client
-- **scikit-learn** — Random Forest Regressor
-- **Pandas / NumPy** — Data processing
-- **Joblib** — Model serialization
-- **Streamlit** — Alternative Python dashboard
+| Layer | Technology |
+|---|---|
+| **Language** | Python 3.11+ |
+| **Dashboard** | Streamlit |
+| **Data** | fastf1, Pandas, NumPy |
+| **ML** | scikit-learn (Random Forest), Joblib |
+| **Viz** | Altair |
+| **Infra** | Docker, docker-compose, GitHub Actions |
+| **Quality** | Ruff, mypy, pytest, pre-commit |
 
-### Frontend
-- **Next.js 16** — React framework
-- **React 19** — UI library
-- **Recharts** — Charts (line, area, scatter)
-- **Tailwind CSS 4** — Utility-first styling
-- **Lucide React** — Icon library
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our guidelines.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).

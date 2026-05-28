@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "f1-intelligence-hub"
+version = "1.0.0"
+description = "Formula 1 data analytics and ML platform for lap time prediction and telemetry analysis"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "F1 Intelligence Hub Contributors" },
+]
+keywords = ["f1", "formula-1", "telemetry", "machine-learning", "analytics", "fastf1"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.57",
+    "fastf1>=3.8",
+    "pandas>=2.3",
+    "scikit-learn>=1.8",
+    "joblib>=1.5",
+    "numpy>=2.4",
+    "altair>=6.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/Mehta-27/F1-Telemetry"
+Repository = "https://github.com/Mehta-27/F1-Telemetry"
+Issues = "https://github.com/Mehta-27/F1-Telemetry/issues"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "ARG"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", ".venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
